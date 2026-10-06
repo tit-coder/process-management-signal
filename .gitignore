@@ -1,0 +1,7 @@
+process_manager
+*.o
+*.log
+*.tmp
+.vscode/
+.idea/
+.DS_Store
