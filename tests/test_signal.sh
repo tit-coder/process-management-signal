@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Test Script: test_signal.sh
-# Description: Verifies SIGSTOP (Suspend), SIGCONT (Resume), SIGTERM (Terminate),
-#              and multiple/idempotent signal operations.
+# Mo ta: Kiem tra SIGSTOP (Suspend), SIGCONT (Resume), SIGTERM (Terminate),
+#        va tinh bat bien khi gui lap tin hieu nhieu lan.
 # ==============================================================================
 
 set -euo pipefail
@@ -15,7 +15,7 @@ echo "=================================================="
 echo " [TEST SUITE] test_signal.sh: Signal Controls"
 echo "=================================================="
 
-# Ensure binary is built
+# Dam bao project da duoc bien dich
 if [ ! -f "$BINARY" ]; then
     echo "[BUILD] Building project..."
     make -C "$PROJECT_ROOT"
@@ -23,16 +23,16 @@ fi
 
 echo "[STEP 1] Running sequence: Suspend -> Suspend again -> Status -> Resume -> Resume again -> Status -> Terminate -> Terminate again -> Exit..."
 
-# Input sequence:
-# 1: Suspend
-# 1: Suspend again
-# 3: Show status (expected STOPPED)
-# 2: Resume
-# 2: Resume again
-# 3: Show status (expected RUNNING)
-# 4: Terminate
-# 4: Terminate again (handled gracefully)
-# 5: Exit
+# Chuoi thao tac nhap:
+# 1: Suspend (Tam dung)
+# 1: Suspend again (Tam dung lan nua)
+# 3: Show status (Kiem tra status STOPPED)
+# 2: Resume (Tiep tuc)
+# 2: Resume again (Tiep tuc lan nua)
+# 3: Show status (Kiem tra status RUNNING)
+# 4: Terminate (Ket thuc)
+# 4: Terminate again (Ket thuc lai de kiem tra xu ly an toan)
+# 5: Exit (Thoat)
 INPUT_SEQUENCE=$(cat <<EOF
 1
 1
@@ -52,7 +52,7 @@ echo "$OUTPUT"
 
 echo "[VERIFICATION] Checking test criteria..."
 
-# Check 1: Suspend success
+# Kiem tra 1: Gui SIGSTOP thanh cong
 if echo "$OUTPUT" | grep -q "Process .* suspended (SIGSTOP sent)"; then
     echo "  [PASS] SIGSTOP successfully sent and acknowledged."
 else
@@ -60,7 +60,7 @@ else
     exit 1
 fi
 
-# Check 2: Stopped status detected
+# Kiem tra 2: Trang thai chuyen thanh STOPPED
 if echo "$OUTPUT" | grep -q "Status    : STOPPED"; then
     echo "  [PASS] Process state changed to STOPPED."
 else
@@ -68,7 +68,7 @@ else
     exit 1
 fi
 
-# Check 3: Resume success
+# Kiem tra 3: Gui SIGCONT thanh cong
 if echo "$OUTPUT" | grep -q "Process .* resumed (SIGCONT sent)"; then
     echo "  [PASS] SIGCONT successfully sent and acknowledged."
 else
@@ -76,7 +76,7 @@ else
     exit 1
 fi
 
-# Check 4: Running status restored
+# Kiem tra 4: Trang thai khoi phuc RUNNING
 if echo "$OUTPUT" | grep -q "Status    : RUNNING"; then
     echo "  [PASS] Process state successfully resumed to RUNNING."
 else
@@ -84,7 +84,7 @@ else
     exit 1
 fi
 
-# Check 5: Terminate success
+# Kiem tra 5: Gui SIGTERM ket thuc thanh cong
 if echo "$OUTPUT" | grep -q "Process .* terminated (SIGTERM sent)"; then
     echo "  [PASS] SIGTERM successfully sent and acknowledged."
 else
@@ -92,7 +92,7 @@ else
     exit 1
 fi
 
-# Check 6: Repeated terminate handled
+# Kiem tra 6: Xu ly an toan khi terminate lai tien trinh da chet
 if echo "$OUTPUT" | grep -q "already terminated"; then
     echo "  [PASS] Repeated terminate correctly identified terminated process."
 else
@@ -104,3 +104,4 @@ echo "=================================================="
 echo " [RESULT] test_signal.sh: ALL CHECKS PASSED!"
 echo "=================================================="
 exit 0
+

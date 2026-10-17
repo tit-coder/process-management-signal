@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Test Script: test_process.sh
-# Description: Verifies process creation, worker execution, and normal exit.
+# Mo ta: Kiem tra khoi tao tien trinh, vong lap worker, va thoat chuong trinh.
 # ==============================================================================
 
 set -euo pipefail
@@ -14,7 +14,7 @@ echo "=================================================="
 echo " [TEST SUITE] test_process.sh: Process Lifecycle"
 echo "=================================================="
 
-# Ensure binary is built
+# Dam bao project da duoc bien dich
 if [ ! -f "$BINARY" ]; then
     echo "[BUILD] Building project..."
     make -C "$PROJECT_ROOT"
@@ -22,16 +22,16 @@ fi
 
 echo "[STEP 1] Testing process start, worker counter, status check, and exit..."
 
-# Input sequence:
-# 3: Show status
-# 5: Exit
+# Chuoi thao tac nhap:
+# 3: Show status (Kiem tra trang thai)
+# 5: Exit (Thoat)
 OUTPUT=$(printf "3\n5\n" | "$BINARY")
 
 echo "$OUTPUT"
 
 echo "[VERIFICATION] Checking test criteria..."
 
-# Check 1: Worker PID printed
+# Kiem tra 1: In ra Worker PID
 if echo "$OUTPUT" | grep -q "Worker PID:"; then
     echo "  [PASS] Worker process was created and displayed PID."
 else
@@ -39,7 +39,7 @@ else
     exit 1
 fi
 
-# Check 2: Running output detected
+# Kiem tra 2: Phat hien worker dang chay
 if echo "$OUTPUT" | grep -q "Running..."; then
     echo "  [PASS] Worker loop is executing (Running... detected)."
 else
@@ -47,7 +47,7 @@ else
     exit 1
 fi
 
-# Check 3: Status is RUNNING
+# Kiem tra 3: Trang thai chinh xac la RUNNING
 if echo "$OUTPUT" | grep -q "Status    : RUNNING"; then
     echo "  [PASS] Status is accurately reported as RUNNING."
 else
@@ -55,7 +55,7 @@ else
     exit 1
 fi
 
-# Check 4: Clean exit
+# Kiem tra 4: Thoat sach se
 if echo "$OUTPUT" | grep -q "Goodbye"; then
     echo "  [PASS] Process manager exited cleanly."
 else
@@ -67,3 +67,4 @@ echo "=================================================="
 echo " [RESULT] test_process.sh: ALL CHECKS PASSED!"
 echo "=================================================="
 exit 0
+
