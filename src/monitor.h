@@ -4,37 +4,38 @@
 #include <sys/types.h>
 
 /**
- * @brief Displays the terminal interactive menu for process management.
+ * @brief Hien thi menu tuong tac tren terminal cho quan ly tien trinh.
  */
 void show_menu(void);
 
 /**
- * @brief Displays the header information and basic status of the process.
+ * @brief Hien thi thong tin co ban va trang thai tien trinh worker.
  * 
- * @param pid Process ID of the worker process.
+ * @param pid PID cua worker process.
  */
 void show_process_info(pid_t pid);
 
 /**
- * @brief Displays the current detailed status of the process.
+ * @brief Hien thi chi tiet trang thai hien tai cua tien trinh.
  * 
- * @param pid Process ID of the worker process.
+ * @param pid PID cua worker process.
  */
 void show_status(pid_t pid);
 
 /**
- * @brief Prompts user and safely reads the integer menu selection.
+ * @brief Nhap va kiem tra an toan lua chon so nguyen tu nguoi dung.
  * 
- * @return int The choice entered by the user, or -1 if invalid.
+ * @return int Lua chon cua nguoi dung, hoac -1 neu khong hop le.
  */
 int get_user_choice(void);
 
 /**
- * @brief Helper to get the process state string (RUNNING, STOPPED, TERMINATED, UNKNOWN).
+ * @brief Ham bo tro lay chuoi trang thai tien trinh tu /proc (RUNNING, STOPPED, TERMINATED, UNKNOWN).
  * 
- * @param pid Process ID to query.
- * @return const char* String representing the state.
+ * @param pid PID cua tien trinh can tra cuu.
+ * @return const char* Chuoi ky tu bieu dien trang thai.
  */
 const char* get_process_state_string(pid_t pid);
 
 #endif /* MONITOR_H */
+
