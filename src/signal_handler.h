@@ -3,28 +3,25 @@
 
 #include <sys/types.h>
 
-/**
- * @brief Suspends a target process by sending SIGSTOP signal.
- * 
- * @param pid Process ID of the process to suspend.
- * @return int 0 on success, -1 on failure.
+/*
+ * Signal Control module
+ *
+ * Dieu khien Worker Process bang signal:
+ *   suspend_process()   -> SIGSTOP (tam dung)
+ *   resume_process()    -> SIGCONT (chay tiep)
+ *   terminate_process() -> SIGTERM (ket thuc)
+ *
+ * Gia tri tra ve (ca 3 ham):
+ *    0 : da gui signal thanh cong
+ *   -1 : that bai (PID khong hop le, tien trinh khong ton tai,
+ *        khong co quyen, ...). Loi da duoc in ra stderr.
+ *
+ * Luu y: terminate_process() chi GUI signal. Noi goi phai goi
+ * wait_for_process() (process_manager) de thu hoi tien trinh, tranh Zombie.
  */
+
 int suspend_process(pid_t pid);
-
-/**
- * @brief Resumes a suspended target process by sending SIGCONT signal.
- * 
- * @param pid Process ID of the process to resume.
- * @return int 0 on success, -1 on failure.
- */
 int resume_process(pid_t pid);
-
-/**
- * @brief Terminates a target process by sending SIGTERM signal.
- * 
- * @param pid Process ID of the process to terminate.
- * @return int 0 on success, -1 on failure.
- */
 int terminate_process(pid_t pid);
 
 #endif /* SIGNAL_HANDLER_H */
