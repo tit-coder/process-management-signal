@@ -2,7 +2,6 @@
 #include "process_manager.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -11,27 +10,38 @@
 #include <string.h>
 
 pid_t create_process(void) {
+    /* Do not duplicate the parent's buffered output in the child. */
+    if (fflush(NULL) == EOF) {
+        return -1;
+    }
+
     pid_t pid = fork();
 
     if (pid < 0) {
+        int saved_errno = errno;
         perror("[ERROR] Failed to fork worker process");
+        errno = saved_errno;
         return -1;
     }
 
     if (pid == 0) {
-        /* Worker Child Process */
-        printf("\n[Worker] Initialized successfully. Worker PID: %d\n", getpid());
-        fflush(stdout);
-
-        int counter = 1;
-        while (1) {
-            printf("Running... %d\n", counter++);
-            fflush(stdout);
-            sleep(1);
+        /* main installs no handlers/mask. Preserve the team's signal policy. */
+        printf("\n[Worker] Initialized successfully. Worker PID: %ld\n", (long)getpid());
+        if (fflush(stdout) == EOF) {
+            _exit(1);
         }
 
-        /* Should not be reached */
-        exit(EXIT_SUCCESS);
+        unsigned long long counter = 1;
+        while (1) {
+            printf("Running... %llu\n", counter++);
+            if (fflush(stdout) == EOF) {
+                _exit(1);
+            }
+            /* Complete the interval even if a future handler interrupts it. */
+            unsigned int remaining = 1;
+            while ((remaining = sleep(remaining)) != 0) {
+            }
+        }
     }
 
     /* Parent Process */
@@ -40,66 +50,76 @@ pid_t create_process(void) {
 
 int is_process_alive(pid_t pid) {
     if (pid <= 0) {
+        errno = EINVAL;
         return 0;
     }
 
-    /* Check if child has exited and can be reaped */
-    int status;
-    pid_t result = waitpid(pid, &status, WNOHANG);
-    if (result == pid) {
-        /* Child already terminated and has been reaped */
-        return 0;
-    }
-
-    /* Check existence via kill(pid, 0) */
-    if (kill(pid, 0) == 0) {
-        /* Also inspect /proc/<pid>/status to detect zombie state */
-        char path[64];
-        snprintf(path, sizeof(path), "/proc/%d/status", pid);
-        FILE *fp = fopen(path, "r");
-        if (fp) {
-            char line[256];
-            while (fgets(line, sizeof(line), fp)) {
-                if (strncmp(line, "State:", 6) == 0) {
-                    char *p = line + 6;
-                    while (*p == ' ' || *p == '\t') p++;
-                    if (*p == 'Z' || *p == 'X') {
-                        fclose(fp);
-                        return 0; /* Zombie or Dead */
-                    }
-                    break;
-                }
-            }
-            fclose(fp);
+    /* EPERM proves existence, but still inspect state for zombies. */
+    if (kill(pid, 0) == -1 && errno != EPERM) {
+        if (errno == ESRCH) {
+            return 0;
         }
+        /* Existing callers use a boolean: unknown must not mean dead. */
         return 1;
     }
 
-    if (errno == ESRCH) {
-        return 0; /* Process does not exist */
-    } else if (errno == EPERM) {
-        return 1; /* Process exists, no permission to send signal */
+    /* Linux /proc avoids consuming the exit status needed by wait_for_process. */
+    char path[64];
+    snprintf(path, sizeof(path), "/proc/%ld/status", (long)pid);
+    FILE *fp = fopen(path, "r");
+    if (!fp) {
+        /* The process may have disappeared since kill(pid, 0). */
+        if (errno == ENOENT || errno == ESRCH) {
+            errno = ESRCH;
+            return 0;
+        }
+        return 1; /* Unknown state; retain the inspection error. */
     }
 
-    return 0;
+    char line[256];
+    int state = 0;
+    errno = 0;
+    while (fgets(line, sizeof(line), fp)) {
+        if (strncmp(line, "State:", 6) == 0) {
+            char *p = line + 6;
+            while (*p == ' ' || *p == '\t') p++;
+            state = (unsigned char)*p;
+            if (state == '\n') state = 0;
+            break;
+        }
+    }
+    int saved_errno = ferror(fp) ? (errno ? errno : EIO) : 0;
+    if (fclose(fp) == EOF && saved_errno == 0) {
+        saved_errno = errno;
+    }
+    errno = saved_errno;
+    if (!state) {
+        if (errno == 0) errno = EIO;
+        return 1;
+    }
+    return state != 'Z' && state != 'X' && state != 'x';
 }
 
 int wait_for_process(pid_t pid) {
     if (pid <= 0) {
+        errno = EINVAL;
         return -1;
     }
 
     int status;
-    pid_t result = waitpid(pid, &status, 0);
+    pid_t result;
+    do {
+        result = waitpid(pid, &status, 0);
+    } while (result == -1 && errno == EINTR);
     if (result == -1) {
         if (errno == ECHILD) {
             /* Process has already been reaped or does not exist as child */
             return 0;
         }
-        perror("[ERROR] waitpid failed");
         return -1;
     }
 
+    errno = 0;
     if (WIFEXITED(status)) {
         return WEXITSTATUS(status);
     } else if (WIFSIGNALED(status)) {
