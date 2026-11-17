@@ -336,9 +336,10 @@ void pm_pool_cleanup_all(void) {
 
     printf("[Process Manager] Cleaning up all workers in pool (PGID: %d)...\n", g_pool->pgid);
 
-    // Send SIGTERM to entire process group if available
+    // Send SIGTERM to entire process group if available, followed by SIGCONT to wake any stopped workers
     if (g_pool->pgid > 0) {
         kill(-g_pool->pgid, SIGTERM);
+        kill(-g_pool->pgid, SIGCONT);
     }
 
     // Wait and reap each active worker
