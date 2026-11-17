@@ -7,6 +7,9 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "monitor.h"
+#include "process_manager.h"
+#include "scheduler.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,7 +62,6 @@ int monitor_read_proc_status(pid_t pid, process_info_t *info) {
 
     char line[512];
     while (fgets(line, sizeof(line), fp) != NULL) {
-        // Strip trailing newline
         line[strcspn(line, "\r\n")] = '\0';
 
         if (strncmp(line, "Name:", 5) == 0) {
@@ -112,5 +114,68 @@ int monitor_show_process_status(pid_t pid) {
     printf("  %-16s : %d\n", "Thread Count", info.threads);
     printf("============================================================\n");
 
+    return 0;
+}
+
+int monitor_show_pool_dashboard(void) {
+    worker_pool_t *pool = pm_get_pool();
+    if (!pool || pool->count == 0) {
+        printf("\n[Monitor Dashboard] Worker pool is currently EMPTY.\n");
+        return 0;
+    }
+
+    printf("\n========================================================================================\n");
+    printf("                       PROCESS POOL & SYSTEM MONITOR DASHBOARD                          \n");
+    printf("========================================================================================\n");
+    printf("  %-4s %-8s %-16s %-14s %-20s %-8s %-10s\n",
+           "ID", "PID", "Process Name", "Kernel State", "Interpreted State", "Counter", "VmRSS");
+    printf("----------------------------------------------------------------------------------------\n");
+
+    int active_count = 0;
+    for (int i = 0; i < MAX_WORKERS; i++) {
+        if (pool->workers[i].is_active && pool->workers[i].pid > 0) {
+            pid_t pid = pool->workers[i].pid;
+            process_info_t info;
+            char state_display[128] = "N/A";
+            char interp[128] = "Unknown";
+            char rss_display[128] = "N/A";
+
+            if (monitor_read_proc_status(pid, &info) == 0) {
+                snprintf(state_display, sizeof(state_display), "%s", info.state_raw);
+                if (info.state_char == 'T') {
+                    strncpy(interp, "STOPPED (SIGSTOP)", sizeof(interp) - 1);
+                } else if (info.state_char == 'S') {
+                    strncpy(interp, "SLEEPING (Ready)", sizeof(interp) - 1);
+                } else if (info.state_char == 'R') {
+                    strncpy(interp, "RUNNING (Active)", sizeof(interp) - 1);
+                } else if (info.state_char == 'Z') {
+                    strncpy(interp, "ZOMBIE", sizeof(interp) - 1);
+                } else {
+                    snprintf(interp, sizeof(interp), "State '%c'", info.state_char);
+                }
+                snprintf(rss_display, sizeof(rss_display), "%s", info.vm_rss);
+            } else {
+                strncpy(state_display, "DEAD/ZOMBIE", sizeof(state_display) - 1);
+                strncpy(interp, "Terminated", sizeof(interp) - 1);
+            }
+
+            printf("  %-4d %-8d %-16s %-14s %-20s %-8lu %-10s\n",
+                   pool->workers[i].id,
+                   (int)pid,
+                   pool->workers[i].name,
+                   state_display,
+                   interp,
+                   pool->workers[i].counter,
+                   rss_display);
+            active_count++;
+        }
+    }
+
+    printf("----------------------------------------------------------------------------------------\n");
+    printf("  Pool: %d active workers | Process Group (PGID): %d | Scheduler: %s\n",
+           active_count,
+           (int)pm_get_pgid(),
+           scheduler_is_running() ? "ACTIVE (Preemptive Round-Robin)" : "OFF (Manual Control)");
+    printf("========================================================================================\n");
     return 0;
 }

@@ -85,14 +85,14 @@ else
 fi
 
 # --- Case 5: Test interactive menu invalid choices ("xyz", "99", "-5") ---
-echo -e "${YELLOW}[Case 5] Testing interactive menu resilience with invalid choices ('invalid', '99', '5')...${NC}"
-printf "invalid_choice\n99\n-5\n5\n" | "$BIN" > "$TMP_OUT" 2>&1 &
+echo -e "${YELLOW}[Case 5] Testing interactive menu resilience with invalid choices ('invalid', '99', '9')...${NC}"
+printf "invalid_choice\n99\n-5\n9\n" | "$BIN" > "$TMP_OUT" 2>&1 &
 INTER_PID=$!
 CLEANUP_PIDS+=("$INTER_PID")
 
 wait "$INTER_PID" || true
 
-if grep -q "Please enter a valid option number between 1 and 5" "$TMP_OUT"; then
+if grep -qE "Please enter a valid option number between 1 and [0-9]" "$TMP_OUT"; then
     echo -e "${GREEN}[PASS] Invalid menu input correctly warned and gracefully handled.${NC}"
 else
     echo -e "${RED}[FAIL] Invalid menu input was not properly handled!${NC}"

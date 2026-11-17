@@ -45,8 +45,10 @@ test: $(TARGET)
 	@chmod +x tests/*.sh
 	@./tests/test_process.sh
 	@./tests/test_signal.sh
+	@./tests/test_pool.sh
+	@./tests/test_scheduler.sh
 	@./tests/test_invalid_pid.sh
-	@echo "[DONE] All test suites completed."
+	@echo "[DONE] All 5 test suites completed successfully."
 
 clean:
 	@echo "[CLEAN] Removing build artifacts..."

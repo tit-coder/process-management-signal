@@ -34,14 +34,22 @@ typedef struct {
 int monitor_read_proc_status(pid_t pid, process_info_t *info);
 
 /**
- * @brief Display a formatted status summary of the target process to stdout.
- * 
- * Accurately interprets Linux kernel process states (R, S, D, T, t, Z).
+ * @brief Display a formatted status summary of a single process to stdout.
  * 
  * @param pid Target Process ID.
  * @return int 0 on success, -1 on failure.
  */
 int monitor_show_process_status(pid_t pid);
+
+/**
+ * @brief Display a comprehensive dashboard of all active workers in the pool.
+ * 
+ * Iterates through the worker pool, queries /proc/<PID>/status for each,
+ * and formats telemetry into a unified ASCII table.
+ * 
+ * @return int 0 on success, -1 on failure.
+ */
+int monitor_show_pool_dashboard(void);
 
 /**
  * @brief Return human-readable explanation of Linux process state character.
