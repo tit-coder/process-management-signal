@@ -21,7 +21,7 @@
 static void print_banner(void) {
     printf("\n=================================================================\n");
     printf("   LINUX PROCESS MANAGEMENT SYSTEM (C11 / POSIX.1-2008)          \n");
-    printf("   Subject: System Programming - HCMUT / VKU Linux Dev Team      \n");
+    printf("   Subject: System Programming - VKU Faculty of Computer Science \n");
     printf("   Team Leader: tit-coder | Repo: linux-process-control         \n");
     printf("   Architecture: Process Pool & Preemptive Round-Robin Scheduler \n");
     printf("=================================================================\n");
